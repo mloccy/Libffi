@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.5)
-project(libffi C)
+cmake_minimum_required(VERSION 3.20)
+project(ffi C)
 enable_language(ASM_MASM)
 set(VERSION 3.2.1)
 
@@ -74,15 +74,48 @@ configure_file("${inc}/fficonfig.h.in" "${bin}/include/fficonfig.h")
 configure_file("${inc}/ffitarget.h" "${bin}/include/ffitarget.h" COPYONLY)
 configure_file("${inc}/ffi_common.h" "${bin}/include/ffi_common.h" COPYONLY)
 
+set(PROCESSED_HEADERS "${bin}/include/ffi.h" "${bin}/include/fficonfig.h" "${bin}/include/ffitarget.h" "${bin}/include/ffi_common.h")
 set_source_files_properties(${sources} PROPERTIES LANGUAGE C)
 set_source_files_properties(${asm}
-PROPERTIES
-    LANGUAGE ASM_MASM
-    GENERATED TRUE
-    COMPILE_FLAGS ${fmasm}
-)
-add_library(ffi ${sources} ${asm})
+    PROPERTIES
+        LANGUAGE ASM_MASM
+        GENERATED TRUE
+        COMPILE_FLAGS ${fmasm}
+    )
+
+add_library(${PROJECT_NAME} ${sources} ${asm})
 set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG")
-target_compile_definitions(ffi PUBLIC "FFI_BUILDING")
-set_target_properties(ffi PROPERTIES PREFIX "lib")
-add_dependencies(ffi preprocess)
+target_compile_definitions(${PROJECT_NAME} PUBLIC "FFI_BUILDING")
+set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "lib")
+
+include(GNUInstallDirs)
+install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}Targets ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(FILES ${PROCESSED_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(
+  EXPORT ${PROJECT_NAME}Targets
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+  NAMESPACE ${PROJECT_NAME}::
+  FILE ${PROJECT_NAME}Targets.cmake
+  )
+
+
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Version.cmake"
+  VERSION ${VERSION}
+  COMPATIBILITY AnyNewerVersion)
+
+configure_package_config_file(
+    "cmake/Config.cmake.in"
+    "${PROJECT_NAME}Config.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+    PATH_VARS CMAKE_INSTALL_LIBDIR)
+install(
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Version.cmake"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
+  )
+
+add_dependencies(${PROJECT_NAME} preprocess)
