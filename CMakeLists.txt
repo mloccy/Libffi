@@ -90,7 +90,7 @@ set_source_files_properties(${asm}
 
 # add_library(${PROJECT_NAME} ${sources} ${asm})
 set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG")
-target_compile_definitions(${PROJECT_NAME} PUBLIC "FFI_BUILDING")
+target_compile_definitions(${PROJECT_NAME} PUBLIC FFI_BUILDING FFI_STATIC_BUILD USE_DL_PREFIX)
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "lib")
 
 include(GNUInstallDirs)

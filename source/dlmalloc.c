@@ -363,9 +363,9 @@ MALLINFO_FIELD_TYPE        default: size_t
   size_t. The value is used only if  HAVE_USR_INCLUDE_MALLOC_H is not set
 
 REALLOC_ZERO_BYTES_FREES    default: not defined
-  This should be set if a call to realloc with zero bytes should 
-  be the same as a call to free. Some people think it should. Otherwise, 
-  since this malloc returns a unique pointer for malloc(0), so does 
+  This should be set if a call to realloc with zero bytes should
+  be the same as a call to free. Some people think it should. Otherwise,
+  since this malloc returns a unique pointer for malloc(0), so does
   realloc(p, 0).
 
 LACKS_UNISTD_H, LACKS_FCNTL_H, LACKS_SYS_PARAM_H, LACKS_SYS_MMAN_H
@@ -437,6 +437,11 @@ DEFAULT_MMAP_THRESHOLD       default: 256K
   disable mmap by setting to MAX_SIZE_T.
 
 */
+
+#if defined __linux__ && !defined _GNU_SOURCE
+/* mremap() on Linux requires this via sys/mman.h */
+#define _GNU_SOURCE 1
+#endif
 
 #ifndef WIN32
 #ifdef _WIN32
@@ -586,6 +591,11 @@ DEFAULT_MMAP_THRESHOLD       default: 256K
   are used in this malloc, so setting them has no effect. But this
   malloc does support the following options.
 */
+
+/* The system's malloc.h may have conflicting defines. */
+#undef M_TRIM_THRESHOLD
+#undef M_GRANULARITY
+#undef M_MMAP_THRESHOLD
 
 #define M_TRIM_THRESHOLD     (-1)
 #define M_GRANULARITY        (-2)
@@ -2291,7 +2301,7 @@ static size_t traverse_and_check(mstate m);
 #define treebin_at(M,i)     (&((M)->treebins[i]))
 
 /* assign tree index for size S to variable I */
-#if defined(__GNUC__) && defined(i386)
+#if defined(__GNUC__) && defined(__i386__)
 #define compute_tree_index(S, I)\
 {\
   size_t X = S >> TREEBIN_SHIFT;\
@@ -2356,7 +2366,7 @@ static size_t traverse_and_check(mstate m);
 
 /* index corresponding to given bit */
 
-#if defined(__GNUC__) && defined(i386)
+#if defined(__GNUC__) && defined(__i386__)
 #define compute_bit2idx(X, I)\
 {\
   unsigned int J;\
@@ -2366,7 +2376,7 @@ static size_t traverse_and_check(mstate m);
 
 #else /* GNUC */
 #if  USE_BUILTIN_FFS
-#define compute_bit2idx(X, I) I = ffs(X)-1
+#define compute_bit2idx(X, I) I = __builtin_ffs(X)-1
 
 #else /* USE_BUILTIN_FFS */
 #define compute_bit2idx(X, I)\
@@ -3551,7 +3561,7 @@ static void* sys_alloc(mstate m, size_t nb) {
       (void)set_segment_flags(&m->seg, mmap_flag);
       m->magic = mparams.magic;
       init_bins(m);
-      if (is_global(m)) 
+      if (is_global(m))
         init_top(m, (mchunkptr)tbase, tsize - TOP_FOOT_SIZE);
       else {
         /* Offset top by embedded malloc_state */
@@ -3704,7 +3714,7 @@ static int sys_trim(mstate m, size_t pad) {
     }
 
     /* Unmap any unused mmapped segments */
-    if (HAVE_MMAP) 
+    if (HAVE_MMAP)
       released += release_unused_segments(m);
 
     /* On failure, disable autotrim to avoid repeated failed future calls */
@@ -3912,7 +3922,7 @@ static void* internal_memalign(mstate m, size_t alignment, size_t bytes) {
     while (a < alignment) a <<= 1;
     alignment = a;
   }
-  
+
   if (bytes >= MAX_REQUEST - alignment) {
     if (m != 0)  { /* Test isn't needed but avoids compiler warning */
       MALLOC_FAILURE_ACTION;
@@ -4442,7 +4452,7 @@ struct mallinfo dlmallinfo(void) {
 }
 #endif /* NO_MALLINFO */
 
-void dlmalloc_stats() {
+void dlmalloc_stats(void) {
   internal_malloc_stats(gm);
 }
 
@@ -5157,5 +5167,5 @@ History:
     Trial version Fri Aug 28 13:14:29 1992  Doug Lea  (dl at g.oswego.edu)
       * Based loosely on libg++-1.2X malloc. (It retains some of the overall
          structure of old version,  but most details differ.)
- 
+
 */

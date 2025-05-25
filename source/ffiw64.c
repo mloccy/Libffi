@@ -58,7 +58,7 @@ EFI64(ffi_prep_cif_machdep)(ffi_cif *cif)
   switch (cif->abi)
     {
     case FFI_WIN64:
-    //case FFI_GNUW64:
+    case FFI_GNUW64:
       break;
     default:
       return FFI_BAD_ABI;
@@ -71,8 +71,8 @@ EFI64(ffi_prep_cif_machdep)(ffi_cif *cif)
       break;
     case FFI_TYPE_LONGDOUBLE:
       /* GCC returns long double values by reference, like a struct */
-      //if (cif->abi == FFI_GNUW64)
-	//flags = FFI_TYPE_STRUCT;
+      if (cif->abi == FFI_GNUW64)
+	flags = FFI_TYPE_STRUCT;
       break;
     case FFI_TYPE_COMPLEX:
       flags = FFI_TYPE_STRUCT;
@@ -237,14 +237,14 @@ EFI64(ffi_prep_closure_loc)(ffi_closure* closure,
     /* jmpq  *0x7(%rip)        # 0x18 */
     0xff, 0x25, 0x07, 0x00, 0x00, 0x00,
     /* nopl  0(%rax) */
-    0x0f, 0x1f, 0x80, 0x00
+    0x0f, 0x1f, 0x80, 0x00, 0x00, 0x00, 0x00
   };
   char *tramp = closure->tramp;
 
   switch (cif->abi)
     {
     case FFI_WIN64:
-    //case FFI_GNUW64:
+    case FFI_GNUW64:
       break;
     default:
       return FFI_BAD_ABI;
