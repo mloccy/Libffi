@@ -37,6 +37,7 @@ if (MSVC)
         "${src}/closures.c"
         "${src}/prep_cif.c"
         "${src}/raw_api.c"
+        "${src}/tramp.c"
         "${src}/types.c"
     )
 
