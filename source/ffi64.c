@@ -45,8 +45,6 @@
 #if defined(__SUNPRO_C)
 #include <sunmedia_types.h>
 #define UINT128 __m128i
-#else
-#define UINT128 __int128_t
 #endif
 #endif
 
@@ -54,7 +52,15 @@ union big_int_union
 {
   UINT32 i32;
   UINT64 i64;
+
+#ifdef UINT128
   UINT128 i128;
+#else
+  struct
+  {
+	UINT64 i, j;
+  }i128;
+#endif
 };
 
 struct register_args

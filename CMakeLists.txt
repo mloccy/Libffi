@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(ffi C)
 enable_language(ASM_MASM)
 set(VERSION 3.2.1)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(FFI_CLOSURES 1)
 set(FFI_DEBUG 0)
 set(FFI_NO_STRUCTS 0)
@@ -28,6 +28,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/lib")
 set(inc "${CMAKE_SOURCE_DIR}/include")
 set(src "${CMAKE_SOURCE_DIR}/source")
 set(bin "${CMAKE_SOURCE_DIR}/build")
+add_library(${PROJECT_NAME} STATIC)
 
 if (MSVC)
     set(SYMBOL_UNDERSCORE 1)
@@ -42,7 +43,9 @@ if (MSVC)
     if(HAVE_64BIT)
         set(TARGET X86_WIN64)
         set(HAVE_AS_X86_64_UNWIND_SECTION_TYPE 1)
-        set(sources "${sources}" "${src}/ffi64.c")
+        list(APPEND sources "${src}/ffi64.c")
+
+        target_compile_definitions(${PROJECT_NAME} PRIVATE "__x86_64__")
 
         configure_file("${src}/asm/win64.S" "${bin}/source/win64.S.i" COPYONLY)
         set(pre "${bin}/source/win64.S.i")
@@ -59,16 +62,20 @@ if (MSVC)
         set(fmasm "/c /Cx /coff /safeseh /Fo")
     endif()
 
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /Oy- /Oi /Gy /Zi /GL /Gd")
+    target_sources(${PROJECT_NAME} PRIVATE ${sources})
+
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /Oy- /Oi /Gy /Zi /Gd")
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /Oy-")
 
-    add_custom_target(preprocess
-        COMMAND ${CMAKE_C_COMPILER} ${pre} /I ${bin}/include /EP > ${asm}
-        SOURCES ${pre}
-    )
+    add_custom_command(OUTPUT ${asm}
+                       COMMAND ${CMAKE_C_COMPILER} ${pre} /I ${bin}/include /EP > ${asm}
+                       DEPENDS ${pre})
+    set_property(SOURCE ${asm} APPEND PROPERTY OBJECT_DEPENDS ${asm})
+    add_custom_target(preprocess DEPENDS ${asm})
+    target_sources(preprocess PRIVATE ${pre})
 endif()
 
-include_directories("${bin}/include")
+target_include_directories(${PROJECT_NAME} PRIVATE "${bin}/include")
 configure_file("${inc}/ffi.h.in" "${bin}/include/ffi.h")
 configure_file("${inc}/fficonfig.h.in" "${bin}/include/fficonfig.h")
 configure_file("${inc}/ffitarget.h" "${bin}/include/ffitarget.h" COPYONLY)
@@ -83,7 +90,7 @@ set_source_files_properties(${asm}
         COMPILE_FLAGS ${fmasm}
     )
 
-add_library(${PROJECT_NAME} ${sources} ${asm})
+# add_library(${PROJECT_NAME} ${sources} ${asm})
 set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG")
 target_compile_definitions(${PROJECT_NAME} PUBLIC "FFI_BUILDING")
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "lib")
