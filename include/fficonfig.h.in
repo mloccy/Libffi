@@ -49,7 +49,11 @@
 #define HAVE_AS_ASCII_PSEUDO_OP 1
 
 /* Define if your assembler supports .cfi_* directives. */
-#define HAVE_AS_CFI_PSEUDO_OP 0
+#define HAVE_AS_CFI_PSEUDO_OP @FFI_HAVE_AS_CFI_PSEUDO_OP@
+
+#if !HAVE_AS_CFI_PSEUDO_OP
+   #undef HAVE_AS_CFI_PSEUDO_OP
+#endif
 
 /* Define if your assembler supports .register. */
 #undef HAVE_AS_REGISTER_PSEUDO_OP
