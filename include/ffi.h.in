@@ -50,8 +50,8 @@ extern "C" {
 #endif
 
 /* Specify which architecture libffi is configured for. */
-#ifndef @TARGET@
-#define @TARGET@
+#ifndef @FFI_CPU_ARCH@
+#define @FFI_CPU_ARCH@
 #endif
 
 /* ---- System configuration information --------------------------------- */
